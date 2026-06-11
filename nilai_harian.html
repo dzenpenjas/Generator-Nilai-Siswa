@@ -1,510 +1,860 @@
 <!DOCTYPE html>
+
+
+
 <html lang="id">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Generator Nilai Harian</title>
 
+
+
 <style>
+
 *{
+
     box-sizing:border-box;
+
 }
+
+
 
 body{
+
     font-family:Arial, sans-serif;
+
     max-width:1200px;
+
     margin:auto;
+
     padding:20px;
+
     background:#f5f5f5;
+
 }
+
+
 
 h1,h2{
+
     text-align:center;
+
 }
+
+
 
 .card{
+
     background:white;
+
     padding:20px;
+
     border-radius:10px;
+
     margin-bottom:20px;
+
     box-shadow:0 2px 6px rgba(0,0,0,.1);
+
 }
+
+
 
 .info{
+
     background:#e8f4ff;
+
     padding:12px;
+
     border-radius:6px;
+
     margin-bottom:15px;
+
 }
+
+
 
 input,
+
 select,
-textarea{
-    width:100%;
-    padding:10px;
-    border:1px solid #ddd;
-    border-radius:6px;
-    margin-bottom:10px;
-    font-family: 'Courier New', monospace;
-}
 
 textarea{
-    height:180px;
+
+    width:100%;
+
+    padding:10px;
+
+    border:1px solid #ddd;
+
+    border-radius:6px;
+
+    margin-bottom:10px;
+
 }
+
+
+
+textarea{
+
+    height:180px;
+
+}
+
+
 
 button{
+
     padding:10px 20px;
+
     margin:5px;
+
     cursor:pointer;
+
     border:none;
+
     border-radius:6px;
+
     background:#2563eb;
+
     color:white;
+
 }
+
+
 
 button:hover{
+
     opacity:.9;
+
 }
 
-button:active{
-    transform: scale(0.98);
-}
 
-button:disabled{
-    background:#ccc;
-    cursor:not-allowed;
-}
 
 table{
+
     width:100%;
+
     border-collapse:collapse;
+
     background:white;
+
 }
+
+
 
 th,td{
+
     border:1px solid #ddd;
+
     padding:8px;
+
     text-align:center;
+
 }
+
+
 
 th{
+
     background:#2563eb;
+
     color:white;
+
 }
+
+
 
 pre{
+
     background:#111;
+
     color:#00ff66;
+
     padding:15px;
+
     border-radius:6px;
+
     overflow:auto;
+
     min-height:200px;
+
     white-space:pre-wrap;
-    font-family: 'Courier New', monospace;
+
 }
+
+
 
 .grid{
+
     display:grid;
+
     grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+
     gap:10px;
-}
 
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.4);
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 10% auto;
-    padding: 30px;
-    border: 1px solid #888;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-}
-
-.modal-content input {
-    width: 100%;
-    padding: 10px;
-    font-size: 14px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    box-sizing: border-box;
-    margin-bottom: 15px;
-}
-
-.modal-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-}
-
-.modal-buttons button {
-    margin: 0;
-    flex: 1;
-}
-
-.modal-buttons button:first-child {
-    background: #6c757d;
-}
-
-.modal-buttons button:last-child {
-    background: #2563eb;
-}
-
-.success{
-    background:#d4edda;
-    color:#155724;
-    padding:10px;
-    border-radius:6px;
-    margin-top:10px;
-    display:none;
 }
 
 </style>
+
+
 
 </head>
 
 <body>
 
+
+
 <h1>📘 Generator Nilai Harian</h1>
 
+
+
 <div class="card">
+
+
 
 <h2>ID Nilai Harian</h2>
 
+
+
 <div class="grid">
+
 <input id="id1" placeholder="ID NH1">
+
 <input id="id2" placeholder="ID NH2">
+
 <input id="id3" placeholder="ID NH3">
+
 <input id="id4" placeholder="ID NH4">
+
 <input id="id5" placeholder="ID NH5">
+
 </div>
+
+
 
 <button onclick="simpanID()">Simpan ID</button>
 
+
+
 </div>
+
+
 
 <div class="card">
 
+
+
 <div class="info">
+
 <b>Format Input:</b><br><br>
 
-UUID[TAB]UTS[TAB]UAS
+
+
+Nama[TAB]UTS[TAB]UAS
+
+
 
 <br><br>
+
+
 
 Contoh:
+
+
+
 <br>
-bf96b95d-246a-4eeb-aec6-7bd66b6c321b 80 90
+
+Andi 80 90
+
 <br>
-c2519554-697c-4100-9c57-ae3bab40f2f9 75 85
+
+Budi 75 85
+
+
 
 <br><br>
+
+
 
 (Cukup copy langsung dari Excel atau Google Sheets)
 
+
+
 </div>
+
+
 
 <textarea id="inputData" placeholder="Paste data di sini..."></textarea>
 
-<button onclick="generate()">1. Generate Nilai</button>
+
+
+<button onclick="generate()">Generate Nilai</button> <button onclick="copyTable()">Copy Hasil</button>
+
+
 
 </div>
 
+
+
 <div class="card">
+
+
 
 <table id="resultTable">
+
 <thead>
+
 <tr>
-<th>UUID</th>
+
+<th>Nama</th>
+
 <th>UTS</th>
+
 <th>UAS</th>
+
 <th>NH1</th>
+
 <th>NH2</th>
+
 <th>NH3</th>
+
 <th>NH4</th>
+
 <th>NH5</th>
-<th>Nilai Terbaik</th>
+
 </tr>
+
 </thead>
+
 <tbody></tbody>
+
 </table>
 
-<button id="btnGenerateScript" onclick="openScriptModal()" disabled style="margin-top: 15px;">2. Generate Script</button>
-<button onclick="copyTable()">Copy Tabel</button>
 
-<div class="success" id="successMsg">✓ Berhasil disalin ke clipboard!</div>
 
 </div>
 
+
+
 <div class="card">
 
-<h2>Preview Script</h2>
+
+
+<h2>Generate Script</h2>
+
+
+
+<select id="pilihSiswa">
+
+<option value="">-- Pilih Siswa --</option>
+
+</select>
+
+
+
+<button onclick="generateScript()">Generate Script</button> <button onclick="copyScript()">Copy Script</button>
+
+
 
 <pre id="scriptOutput"></pre>
 
-<button onclick="copyScript()">Copy Script</button>
 
-<div class="success" id="successMsg2">✓ Script berhasil disalin!</div>
 
 </div>
 
-<!-- Modal untuk pilih nama variable -->
-<div id="scriptModal" class="modal">
-<div class="modal-content">
-<h2>Generate Script</h2>
-<label for="variableName">Nama Variable:</label>
-<input type="text" id="variableName" placeholder="Contoh: nilai, scores, nilaiSiswa" value="nilai">
-<label for="inputName">Nama Input Field:</label>
-<input type="text" id="inputName" placeholder="Contoh: nilai#sumatif1" value="nilai#sumatif1">
-<div class="modal-buttons">
-<button onclick="closeScriptModal()">Batal</button>
-<button onclick="generateScript()">Generate</button>
-</div>
-</div>
-</div>
+
 
 <script>
 
+
+
 let siswaData = [];
 
+
+
 window.onload = () => {
+
+
+
     for(let i=1;i<=5;i++){
+
+
+
         document.getElementById("id"+i).value =
+
         localStorage.getItem("id"+i) || "";
+
+
+
     }
+
+
+
 };
 
+
+
 function simpanID(){
+
+
+
     for(let i=1;i<=5;i++){
+
+
+
         localStorage.setItem(
+
             "id"+i,
+
             document.getElementById("id"+i).value
+
         );
+
+
+
     }
+
+
+
     alert("ID berhasil disimpan");
+
+
+
 }
+
+
 
 function batasNilai(nilai){
+
+
+
     nilai = Math.round(nilai);
+
+
+
     if(nilai < 70) return 70;
+
     if(nilai > 90) return 90;
+
+
+
     return nilai;
+
+
+
 }
+
+
 
 function random(min,max){
+
+
+
     return Math.floor(
+
         Math.random()*(max-min+1)
+
     ) + min;
+
+
+
 }
 
+
+
 function generate(){
+
+
+
     const data =
+
     document.getElementById("inputData")
+
     .value
+
     .trim();
+
+
 
     if(!data) return;
 
+
+
     siswaData = [];
 
+
+
     const tbody =
+
     document.querySelector(
+
         "#resultTable tbody"
+
     );
+
+
 
     tbody.innerHTML = "";
 
+
+
     const rows = data.split("\n");
-    console.clear();
-    console.log("Jumlah baris:", rows.length);
+
+
 
     rows.forEach(row=>{
-        const cols = row.split('\t').map(x => x.trim());
 
-        if(cols.length < 3){
-            console.warn("Kolom kurang dari 3:", row);
-            return;
-        }
 
-        const uuid = cols[0];
+
+        const cols =
+
+        row.trim().split(/\t|\s+/);
+
+
+
+        if(cols.length < 3) return;
+
+
+
+        const nama = cols[0];
+
         const uts = Number(cols[1]);
+
         const uas = Number(cols[2]);
 
-        if(isNaN(uts) || isNaN(uas)){
-            console.warn("Data tidak valid:", row);
-            return;
-        }
 
-        console.log({
-            uuid,
-            uts,
-            uas
-        });
 
         let rata =
+
         Math.round((uts + uas)/2);
+
+
 
         rata = batasNilai(rata);
 
+
+
         const nh1 =
+
         batasNilai(rata + random(-3,3));
+
+
 
         const nh2 =
+
         batasNilai(rata + random(-3,3));
+
+
 
         const nh3 =
+
         batasNilai(rata + random(-3,3));
+
+
 
         const nh4 =
+
         batasNilai(rata + random(-3,3));
+
+
 
         const nh5 =
+
         batasNilai(rata + random(-3,3));
 
-        const nilaiTerbaik = Math.max(nh1, nh2, nh3, nh4, nh5);
+
 
         siswaData.push({
-            uuid,
+
+            nama,
+
             uts,
+
             uas,
+
             nh1,
+
             nh2,
+
             nh3,
+
             nh4,
-            nh5,
-            nilaiTerbaik
+
+            nh5
+
         });
 
+
+
         tbody.innerHTML += `
+
         <tr>
-            <td>${uuid}</td>
+
+            <td>${nama}</td>
+
             <td>${uts}</td>
+
             <td>${uas}</td>
+
             <td>${nh1}</td>
+
             <td>${nh2}</td>
+
             <td>${nh3}</td>
+
             <td>${nh4}</td>
+
             <td>${nh5}</td>
-            <td><strong>${nilaiTerbaik}</strong></td>
+
         </tr>
+
         `;
 
+
+
     });
 
-    if(siswaData.length > 0){
-        document.getElementById('btnGenerateScript').disabled = false;
-    }
+
+
+    updateDropdown();
+
+
 
 }
 
-function openScriptModal(){
-    if(siswaData.length === 0){
-        alert('Generate nilai terlebih dahulu');
-        return;
-    }
-    document.getElementById('scriptModal').style.display = 'block';
+
+
+function updateDropdown(){
+
+
+
+    const select =
+
+    document.getElementById(
+
+        "pilihSiswa"
+
+    );
+
+
+
+    select.innerHTML =
+
+    '<option value="">-- Pilih Siswa --</option>';
+
+
+
+    siswaData.forEach((s,index)=>{
+
+
+
+        select.innerHTML += `
+
+        <option value="${index}">
+
+            ${s.nama}
+
+        </option>
+
+        `;
+
+
+
+    });
+
+
+
 }
 
-function closeScriptModal(){
-    document.getElementById('scriptModal').style.display = 'none';
-}
+
 
 function generateScript(){
-    const variableName = document.getElementById('variableName').value.trim();
-    const inputName = document.getElementById('inputName').value.trim();
 
-    if(!variableName || !inputName){
-        alert('Silakan isi semua field');
+
+
+    const idx =
+
+    document.getElementById(
+
+        "pilihSiswa"
+
+    ).value;
+
+
+
+    if(idx === ""){
+
+
+
+        alert("Pilih siswa terlebih dahulu");
+
         return;
+
+
+
     }
 
-    // Buat object dengan UUID sebagai key dan nilai terbaik sebagai value
-    const nilaiObj = {};
-    siswaData.forEach(s => {
-        nilaiObj[s.uuid] = s.nilaiTerbaik;
-    });
 
-    let script = `const ${variableName} = ${JSON.stringify(nilaiObj, null, 2)};\n\n`;
-    script += `for (const [id, skor] of Object.entries(${variableName})) {\n`;
-    script += `  const el = document.querySelector(\n`;
-    script += `    \`input[name="${inputName}#\${id}"]\`\n`;
-    script += `  );\n\n`;
-    script += `  if (!el) continue;\n\n`;
-    script += `  el.value = skor;\n`;
-    script += `  el.dispatchEvent(new Event('input', { bubbles: true }));\n`;
-    script += `  el.dispatchEvent(new Event('change', { bubbles: true }));\n`;
-    script += `}`;
 
-    document.getElementById('scriptOutput').textContent = script;
+    const s = siswaData[idx];
 
-    closeScriptModal();
+
+
+    const script = `const nilai = {
+
+  "${document.getElementById("id1").value}": ${s.nh1},
+
+  "${document.getElementById("id2").value}": ${s.nh2},
+
+  "${document.getElementById("id3").value}": ${s.nh3},
+
+  "${document.getElementById("id4").value}": ${s.nh4},
+
+  "${document.getElementById("id5").value}": ${s.nh5}
+
+};
+
+
+
+for (const [id, skor] of Object.entries(nilai)) {
+
+  const el = document.querySelector(
+
+    \`input[name="nilai#sumatif1#\${id}"]\`
+
+  );
+
+
+
+  if (!el) continue;
+
+
+
+  el.value = skor;
+
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+
+  el.dispatchEvent(new Event('change', { bubbles: true }));
+
+}`;
+
+
+
+    document.getElementById(
+
+        "scriptOutput"
+
+    ).textContent = script;
+
+
+
 }
 
+
+
 function copyScript(){
+
+
+
     const text =
+
     document.getElementById(
-        'scriptOutput'
+
+        "scriptOutput"
+
     ).textContent;
+
+
 
     if(!text) return;
 
+
+
     navigator.clipboard.writeText(text);
 
-    const successMsg = document.getElementById('successMsg2');
-    successMsg.style.display = 'block';
-    setTimeout(() => {
-        successMsg.style.display = 'none';
-    }, 2000);
+
+
+    alert("Script berhasil disalin");
+
+
+
 }
 
+
+
 function copyTable(){
+
+
+
     const table =
+
     document.getElementById(
-        'resultTable'
+
+        "resultTable"
+
     );
+
+
 
     let text = "";
 
+
+
     for(let row of table.rows){
+
+
+
         let rowData = [];
 
+
+
         for(let cell of row.cells){
+
+
+
             rowData.push(
+
                 cell.innerText
+
             );
+
+
+
         }
 
+
+
         text +=
+
         rowData.join("\t") + "\n";
+
+
+
     }
+
+
 
     navigator.clipboard.writeText(text);
 
-    const successMsg = document.getElementById('successMsg');
-    successMsg.style.display = 'block';
-    setTimeout(() => {
-        successMsg.style.display = 'none';
-    }, 2000);
-}
 
-window.onclick = function(event) {
-    const modal = document.getElementById('scriptModal');
-    if (event.target == modal) {
-        modal.style.display = 'none';
-    }
+
+    alert(
+
+        "Tabel berhasil disalin"
+
+    );
+
+
+
 }
 
 </script>
+
+
 
 </body>
 
