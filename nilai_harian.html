@@ -503,30 +503,35 @@ function generate(){
 
 
     const rows = data.split("\n");
-
+console.clear();
+console.log("Jumlah baris:", rows.length);
 
 
     rows.forEach(row=>{
 
 
 
-        const cols =
+    const cols = row.split('\t').map(x => x.trim());
 
-        row.trim().split(/\t|\s+/);
+if(cols.length < 3){
+    console.warn("Kolom kurang dari 3:", row);
+    return;
+}
 
+const nama = cols[0];
+const uts = Number(cols[1]);
+const uas = Number(cols[2]);
 
+if(isNaN(uts) || isNaN(uas)){
+    console.warn("Data tidak valid:", row);
+    return;
+}
 
-        if(cols.length < 3) return;
-
-
-
-        const nama = cols[0];
-
-        const uts = Number(cols[1]);
-
-        const uas = Number(cols[2]);
-
-
+        console.log({
+    nama,
+    uts,
+    uas
+});
 
         let rata =
 
