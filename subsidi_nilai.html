@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subsidi Nilai</title>
+<style>
+*{
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, sans-serif;
+    max-width:1200px;
+    margin:auto;
+    padding:20px;
+    background:#f5f5f5;
+}
+
+h1,h2{
+    text-align:center;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    margin-bottom:20px;
+    box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+
+.info{
+    background:#e8f4ff;
+    padding:12px;
+    border-radius:6px;
+    margin-bottom:15px;
+}
+
+label{
+    display:block;
+    margin-bottom:6px;
+    font-weight:bold;
+}
+
+input,
+textarea{
+    width:100%;
+    padding:10px;
+    border:1px solid #ddd;
+    border-radius:6px;
+    margin-bottom:10px;
+}
+
+textarea{
+    height:220px;
+}
+
+button{
+    padding:10px 20px;
+    margin:5px 5px 5px 0;
+    cursor:pointer;
+    border:none;
+    border-radius:6px;
+    background:#2563eb;
+    color:white;
+}
+
+button:hover{
+    opacity:.92;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:8px;
+    text-align:center;
+}
+
+th{
+    background:#2563eb;
+    color:white;
+}
+
+pre{
+    background:#111;
+    color:#00ff66;
+    padding:15px;
+    border-radius:6px;
+    overflow:auto;
+    min-height:120px;
+    white-space:pre-wrap;
+}
+</style>
+</head>
+<body>
+
+<h1>Subsidi Nilai</h1>
+
+<div class="card">
+    <label for="kkm">Nilai KKM</label>
+    <input id="kkm" type="number" min="0" max="100" value="75">
+
+    <div class="info">
+        <b>Format Input:</b><br><br>
+        Nama[TAB]Nilai
+        <br><br>
+        Contoh:
+        <br>
+        Andi	45
+        <br>
+        Budi	62
+        <br>
+        Cici	74
+        <br>
+        Deni	88
+        <br><br>
+        (Cukup copy langsung dari Excel atau Google Sheets)
+    </div>
+
+    <textarea id="inputData" placeholder="Paste data siswa di sini..."></textarea>
+
+    <button onclick="generateSubsidi()">Generate Subsidi</button>
+    <button onclick="copyHasil()">Copy Hasil</button>
+</div>
+
+<div class="card">
+    <table id="resultTable">
+        <thead>
+            <tr>
+                <th>Nama</th>
+                <th>Nilai Asli</th>
+                <th>Subsidi</th>
+                <th>Nilai Akhir</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Hasil Copy TAB</h2>
+    <pre id="copyOutput"></pre>
+</div>
+
+<script>
+let hasilData = [];
+
+function clamp(n, min, max){
+    return Math.max(min, Math.min(max, n));
+}
+
+function random(min, max){
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function parseRow(row){
+    const cols = row.includes("\t")
+        ? row.split("\t").map(x => x.trim())
+        : row.trim().split(/\s+/);
+
+    if(cols.length < 2) return null;
+
+    const nilai = Number(cols[cols.length - 1]);
+    const nama = cols.slice(0, cols.length - 1).join(" ");
+
+    if(!nama || isNaN(nilai)) return null;
+
+    return { nama, nilai };
+}
+
+function computeFinalScores(items, kkm){
+    const sorted = items.map(item => ({ ...item })).sort((a, b) => b.nilai - a.nilai);
+    const results = [];
+    let prevFinal = 0;
+
+    for(let i=0;i<sorted.length;i++){
+        const item = sorted[i];
+        let finalScore;
+
+        if(item.nilai < kkm - 15){
+            const low = kkm;
+            const high = Math.min(100, kkm + 2);
+            finalScore = random(low, high);
+        } else if(item.nilai < kkm){
+            const low = Math.min(100, kkm + 3);
+            const high = Math.min(100, kkm + 10);
+            const rankBoost = Math.round(((item.nilai - (kkm - 15)) / 15) * 4);
+            finalScore = clamp(low + rankBoost + random(0, 2), low, high);
+        } else {
+            const gain = random(0, 5);
+            finalScore = clamp(item.nilai + gain, item.nilai, 100);
+        }
+
+        if(i > 0){
+            if(item.nilai < kkm){
+                finalScore = Math.max(finalScore, prevFinal + 1);
+            } else {
+                finalScore = Math.max(finalScore, prevFinal);
+            }
+        }
+
+        if(item.nilai >= kkm){
+            finalScore = Math.min(finalScore, 100);
+        } else if(item.nilai < kkm - 15){
+            finalScore = clamp(finalScore, kkm, Math.min(100, kkm + 2));
+        } else {
+            finalScore = clamp(finalScore, Math.min(100, kkm + 3), Math.min(100, kkm + 10));
+        }
+
+        if(i > 0 && item.nilai < kkm && finalScore <= prevFinal){
+            finalScore = Math.min(100, prevFinal + 1);
+        }
+
+        if(i > 0 && item.nilai >= kkm && finalScore < prevFinal){
+            finalScore = prevFinal;
+        }
+
+        finalScore = clamp(Math.round(finalScore), 0, 100);
+        const subsidi = finalScore - item.nilai;
+
+        results.push({
+            nama: item.nama,
+            nilaiAsli: item.nilai,
+            subsidi,
+            nilaiAkhir: finalScore
+        });
+
+        prevFinal = finalScore;
+    }
+
+    return results;
+}
+
+function generateSubsidi(){
+    const kkm = Number(document.getElementById("kkm").value);
+    const data = document.getElementById("inputData").value.trim();
+    const tbody = document.querySelector("#resultTable tbody");
+
+    hasilData = [];
+    tbody.innerHTML = "";
+
+    if(isNaN(kkm)){
+        alert("Nilai KKM harus diisi");
+        return;
+    }
+
+    if(!data){
+        document.getElementById("copyOutput").textContent = "";
+        return;
+    }
+
+    const rows = data.split("\n");
+    const parsed = [];
+
+    rows.forEach(row => {
+        if(!row.trim()) return;
+
+        const item = parseRow(row);
+        if(!item){
+            console.warn("Data tidak valid:", row);
+            return;
+        }
+
+        parsed.push(item);
+    });
+
+    hasilData = computeFinalScores(parsed, kkm);
+
+    hasilData.forEach(item => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${item.nama}</td>
+                <td>${item.nilaiAsli}</td>
+                <td>${item.subsidi}</td>
+                <td>${item.nilaiAkhir}</td>
+            </tr>
+        `;
+    });
+
+    updateCopyOutput();
+}
+
+function updateCopyOutput(){
+    const lines = [];
+    lines.push(["Nama", "Nilai Asli", "Subsidi", "Nilai Akhir"].join("\t"));
+
+    hasilData.forEach(item => {
+        lines.push([
+            item.nama,
+            item.nilaiAsli,
+            item.subsidi,
+            item.nilaiAkhir
+        ].join("\t"));
+    });
+
+    document.getElementById("copyOutput").textContent = lines.join("\n");
+}
+
+function copyHasil(){
+    const text = document.getElementById("copyOutput").textContent.trim();
+
+    if(!text) return;
+
+    navigator.clipboard.writeText(text);
+    alert("Hasil berhasil disalin");
+}
+</script>
+</body>
+</html>
