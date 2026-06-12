@@ -183,6 +183,14 @@ pre{
             <label for="rangeMax">Nilai Maksimum</label>
             <input id="rangeMax" type="number" min="0" max="100" value="85">
         </div>
+        <div>
+            <label for="avgMin">Rata-rata Target Minimum</label>
+            <input id="avgMin" type="number" min="0" max="100" value="77">
+        </div>
+        <div>
+            <label for="avgMax">Rata-rata Target Maksimum</label>
+            <input id="avgMax" type="number" min="0" max="100" value="82">
+        </div>
     </div>
 
     <div class="info">
@@ -303,12 +311,18 @@ function getMetodeGenerate(){
 function getRangeNilai(){
     let min = Number(document.getElementById("rangeMin").value);
     let max = Number(document.getElementById("rangeMax").value);
+    let avgMin = Number(document.getElementById("avgMin").value);
+    let avgMax = Number(document.getElementById("avgMax").value);
 
     if(isNaN(min)) min = 70;
     if(isNaN(max)) max = 85;
+    if(isNaN(avgMin)) avgMin = 77;
+    if(isNaN(avgMax)) avgMax = 82;
 
     min = Math.max(0, Math.min(100, Math.round(min)));
     max = Math.max(0, Math.min(100, Math.round(max)));
+    avgMin = Math.max(0, Math.min(100, Math.round(avgMin)));
+    avgMax = Math.max(0, Math.min(100, Math.round(avgMax)));
 
     if(min > max){
         const temp = min;
@@ -316,7 +330,63 @@ function getRangeNilai(){
         max = temp;
     }
 
-    return { min, max };
+    if(avgMin > avgMax){
+        const temp = avgMin;
+        avgMin = avgMax;
+        avgMax = temp;
+    }
+
+    return { min, max, avgMin, avgMax };
+}
+
+function clamp(n, min, max){
+    return Math.max(min, Math.min(max, n));
+}
+
+function buatNilaiDenganTarget(ukuran, min, max, target){
+    const nilai = [];
+
+    if(ukuran <= 0) return nilai;
+
+    if(ukuran === 1){
+        return [clamp(target, min, max)];
+    }
+
+    let totalTarget = target * ukuran;
+    let totalSaatIni = 0;
+
+    for(let i=0;i<ukuran-1;i++){
+        const deviasi = random(-2, 2);
+        const angka = clamp(target + deviasi, min, max);
+        nilai.push(angka);
+        totalSaatIni += angka;
+    }
+
+    let terakhir = totalTarget - totalSaatIni;
+    terakhir = clamp(Math.round(terakhir), min, max);
+    nilai.push(terakhir);
+
+    let rataActual = nilai.reduce((a,b)=>a+b,0) / nilai.length;
+    let selisih = Math.round((target - rataActual) * nilai.length);
+
+    while(selisih !== 0){
+        let berubah = false;
+
+        for(let i=0;i<nilai.length && selisih !== 0;i++){
+            const arah = selisih > 0 ? 1 : -1;
+            const baru = clamp(nilai[i] + arah, min, max);
+
+            if(baru !== nilai[i]){
+                nilai[i] = baru;
+                selisih -= arah;
+                berubah = true;
+            }
+        }
+
+        if(!berubah) break;
+    }
+
+    return nilai;
 }
 
 function buatNilaiHarian(uts, uas){
@@ -325,12 +395,8 @@ function buatNilaiHarian(uts, uas){
 
     if(metode === "range"){
         const range = getRangeNilai();
-
-        for(let i=0;i<jumlahNilai;i++){
-            nilaiHarian.push(random(range.min, range.max));
-        }
-
-        return nilaiHarian;
+        const targetAvg = random(range.avgMin, range.avgMax);
+        return buatNilaiDenganTarget(jumlahNilai, range.min, range.max, targetAvg);
     }
 
     let rata = Math.round((uts + uas)/2);
