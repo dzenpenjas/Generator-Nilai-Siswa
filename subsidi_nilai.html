@@ -36,6 +36,12 @@ h1,h2{
     margin-bottom:15px;
 }
 
+.options{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:10px;
+}
+
 label{
     display:block;
     margin-bottom:6px;
@@ -105,6 +111,17 @@ pre{
     <label for="kkm">Nilai KKM</label>
     <input id="kkm" type="number" min="0" max="100" value="75">
 
+    <div class="options">
+        <div>
+            <label for="urutanTampil">Urutan Tampilan</label>
+            <select id="urutanTampil">
+                <option value="real_desc">Nilai Real Tertinggi</option>
+                <option value="subsidi_desc">Nilai Subsidi Tertinggi</option>
+                <option value="abjad">Nama A-Z</option>
+            </select>
+        </div>
+    </div>
+
     <div class="info">
         <b>Format Input:</b><br><br>
         Nama[TAB]Nilai
@@ -158,6 +175,35 @@ function random(min, max){
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function sortForProcessing(items){
+    return items.map(item => ({ ...item })).sort((a, b) => {
+        if(b.nilai !== a.nilai) return b.nilai - a.nilai;
+        return a.nama.localeCompare(b.nama, "id");
+    });
+}
+
+function sortForDisplay(items){
+    const mode = document.getElementById("urutanTampil").value;
+    const list = items.map(item => ({ ...item }));
+
+    if(mode === "subsidi_desc"){
+        return list.sort((a, b) => {
+            if(b.subsidi !== a.subsidi) return b.subsidi - a.subsidi;
+            if(b.nilaiAsli !== a.nilaiAsli) return b.nilaiAsli - a.nilaiAsli;
+            return a.nama.localeCompare(b.nama, "id");
+        });
+    }
+
+    if(mode === "abjad"){
+        return list.sort((a, b) => a.nama.localeCompare(b.nama, "id"));
+    }
+
+    return list.sort((a, b) => {
+        if(b.nilaiAsli !== a.nilaiAsli) return b.nilaiAsli - a.nilaiAsli;
+        return a.nama.localeCompare(b.nama, "id");
+    });
+}
+
 function parseRow(row){
     const cols = row.includes("\t")
         ? row.split("\t").map(x => x.trim())
@@ -174,64 +220,79 @@ function parseRow(row){
 }
 
 function computeFinalScores(items, kkm){
-    const sorted = items.map(item => ({ ...item })).sort((a, b) => b.nilai - a.nilai);
+    const sorted = sortForProcessing(items);
     const results = [];
-    let prevFinal = 0;
+    const group1 = [];
+    const group2 = [];
+    const group3 = [];
 
-    for(let i=0;i<sorted.length;i++){
-        const item = sorted[i];
-        let finalScore;
-
+    sorted.forEach(item => {
         if(item.nilai < kkm - 15){
-            const low = kkm;
-            const high = Math.min(100, kkm + 2);
-            finalScore = random(low, high);
+            group1.push(item);
         } else if(item.nilai < kkm){
-            const low = Math.min(100, kkm + 3);
-            const high = Math.min(100, kkm + 10);
-            const rankBoost = Math.round(((item.nilai - (kkm - 15)) / 15) * 4);
-            finalScore = clamp(low + rankBoost + random(0, 2), low, high);
+            group2.push(item);
         } else {
-            const gain = random(0, 5);
-            finalScore = clamp(item.nilai + gain, item.nilai, 100);
+            group3.push(item);
         }
+    });
 
-        if(i > 0){
-            if(item.nilai < kkm){
-                finalScore = Math.max(finalScore, prevFinal + 1);
-            } else {
-                finalScore = Math.max(finalScore, prevFinal);
+    function assignGroup(group, minBand, maxBand, gainMin, gainMax){
+        if(group.length === 0) return [];
+
+        const local = [];
+        const span = Math.max(0, maxBand - minBand);
+
+        group.forEach((item, index) => {
+            const position = group.length === 1 ? 1 : (group.length - 1 - index) / (group.length - 1);
+            let target = Math.round(minBand + position * span);
+
+            if(gainMin !== null && gainMax !== null){
+                const gain = random(gainMin, gainMax);
+                target = clamp(item.nilai + gain, minBand, maxBand);
+            }
+
+            local.push({
+                nama: item.nama,
+                nilaiAsli: item.nilai,
+                target
+            });
+        });
+
+        for(let i=1;i<local.length;i++){
+            if(local[i].target >= local[i-1].target){
+                local[i].target = Math.max(minBand, local[i-1].target - 1);
             }
         }
 
-        if(item.nilai >= kkm){
-            finalScore = Math.min(finalScore, 100);
-        } else if(item.nilai < kkm - 15){
-            finalScore = clamp(finalScore, kkm, Math.min(100, kkm + 2));
-        } else {
-            finalScore = clamp(finalScore, Math.min(100, kkm + 3), Math.min(100, kkm + 10));
+        for(let i=0;i<local.length;i++){
+            local[i].target = clamp(local[i].target, minBand, maxBand);
         }
 
-        if(i > 0 && item.nilai < kkm && finalScore <= prevFinal){
-            finalScore = Math.min(100, prevFinal + 1);
-        }
+        return local;
+    }
 
-        if(i > 0 && item.nilai >= kkm && finalScore < prevFinal){
-            finalScore = prevFinal;
-        }
+    const band1Max = Math.min(100, kkm + 2);
+    const band2Min = Math.min(100, kkm + 3);
+    const band2Max = Math.min(100, kkm + 10);
+    const band3Min = Math.min(100, kkm + 11);
+    const band3Max = 100;
 
-        finalScore = clamp(Math.round(finalScore), 0, 100);
-        const subsidi = finalScore - item.nilai;
+    let processed = [];
+    processed = processed.concat(assignGroup(group3, band3Min, band3Max, 0, 5));
+    processed = processed.concat(assignGroup(group2, band2Min, band2Max, null, null));
+    processed = processed.concat(assignGroup(group1, kkm, band1Max, null, null));
 
+    processed.forEach(item => {
+        item.target = clamp(Math.round(item.target), 0, 100);
+        item.subsidi = item.target - item.nilaiAsli;
+        item.nilaiAkhir = item.target;
         results.push({
             nama: item.nama,
-            nilaiAsli: item.nilai,
-            subsidi,
-            nilaiAkhir: finalScore
+            nilaiAsli: item.nilaiAsli,
+            subsidi: item.subsidi,
+            nilaiAkhir: item.nilaiAkhir
         });
-
-        prevFinal = finalScore;
-    }
+    });
 
     return results;
 }
@@ -271,7 +332,9 @@ function generateSubsidi(){
 
     hasilData = computeFinalScores(parsed, kkm);
 
-    hasilData.forEach(item => {
+    const tampil = sortForDisplay(hasilData);
+
+    tampil.forEach(item => {
         tbody.innerHTML += `
             <tr>
                 <td>${item.nama}</td>
@@ -289,7 +352,9 @@ function updateCopyOutput(){
     const lines = [];
     lines.push(["Nama", "Nilai Asli", "Subsidi", "Nilai Akhir"].join("\t"));
 
-    hasilData.forEach(item => {
+    const tampil = sortForDisplay(hasilData);
+
+    tampil.forEach(item => {
         lines.push([
             item.nama,
             item.nilaiAsli,
