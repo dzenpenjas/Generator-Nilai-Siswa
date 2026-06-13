@@ -221,80 +221,28 @@ function parseRow(row){
 
 function computeFinalScores(items, kkm){
     const sorted = sortForProcessing(items);
-    const results = [];
-    const group1 = [];
-    const group2 = [];
-    const group3 = [];
+    const subsidiByNilai = {};
+    const uniqueNilai = [...new Set(sorted.map(item => item.nilai))];
 
-    sorted.forEach(item => {
-        if(item.nilai < kkm - 15){
-            group1.push(item);
-        } else if(item.nilai < kkm){
-            group2.push(item);
-        } else {
-            group3.push(item);
-        }
+    uniqueNilai.forEach((nilai, index) => {
+        const subsidiMinimal = Math.max(0, kkm - nilai);
+        const subsidiBertingkat = subsidiMinimal + index;
+        const subsidiMaksimal = Math.max(0, 100 - nilai);
+
+        subsidiByNilai[nilai] = clamp(subsidiBertingkat, 0, subsidiMaksimal);
     });
 
-    function assignGroup(group, minBand, maxBand, gainMin, gainMax){
-        if(group.length === 0) return [];
+    return sorted.map(item => {
+        const subsidi = subsidiByNilai[item.nilai];
+        const nilaiAkhir = clamp(item.nilai + subsidi, 0, 100);
 
-        const local = [];
-        const span = Math.max(0, maxBand - minBand);
-
-        group.forEach((item, index) => {
-            const position = group.length === 1 ? 1 : (group.length - 1 - index) / (group.length - 1);
-            let target = Math.round(minBand + position * span);
-
-            if(gainMin !== null && gainMax !== null){
-                const gain = random(gainMin, gainMax);
-                target = clamp(item.nilai + gain, minBand, maxBand);
-            }
-
-            local.push({
-                nama: item.nama,
-                nilaiAsli: item.nilai,
-                target
-            });
-        });
-
-        for(let i=1;i<local.length;i++){
-            if(local[i].target >= local[i-1].target){
-                local[i].target = Math.max(minBand, local[i-1].target - 1);
-            }
-        }
-
-        for(let i=0;i<local.length;i++){
-            local[i].target = clamp(local[i].target, minBand, maxBand);
-        }
-
-        return local;
-    }
-
-    const band1Max = Math.min(100, kkm + 2);
-    const band2Min = Math.min(100, kkm + 3);
-    const band2Max = Math.min(100, kkm + 10);
-    const band3Min = Math.min(100, kkm + 11);
-    const band3Max = 100;
-
-    let processed = [];
-    processed = processed.concat(assignGroup(group3, band3Min, band3Max, 0, 5));
-    processed = processed.concat(assignGroup(group2, band2Min, band2Max, null, null));
-    processed = processed.concat(assignGroup(group1, kkm, band1Max, null, null));
-
-    processed.forEach(item => {
-        item.target = clamp(Math.round(item.target), 0, 100);
-        item.subsidi = item.target - item.nilaiAsli;
-        item.nilaiAkhir = item.target;
-        results.push({
+        return {
             nama: item.nama,
-            nilaiAsli: item.nilaiAsli,
-            subsidi: item.subsidi,
-            nilaiAkhir: item.nilaiAkhir
-        });
+            nilaiAsli: item.nilai,
+            subsidi,
+            nilaiAkhir
+        };
     });
-
-    return results;
 }
 
 function generateSubsidi(){
